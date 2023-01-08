@@ -1,4 +1,4 @@
-{   ccalculate.pas
+{   math.pp
 
     Copyright (C) 2022 Tamerlan Bimzhanov
 
@@ -18,12 +18,12 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 }
 
-unit ccalculate;
+unit math;
 
 interface
 
 uses
-    clexer;
+    lexer;
 
 const
     DivisionByZero = 1;
@@ -39,7 +39,7 @@ var
     sign: char;
 begin
     case token^.kind of
-        TnSign: begin
+        TkSign: begin
             sign := token^.sign;
             token := token^.next;
             if sign = '+' then
@@ -50,11 +50,11 @@ begin
                 res := -res
             end
         end;
-        TnInt: begin
+        TkInt: begin
             res := token^.i;
             token := token^.next
         end;
-        TnOBracket: begin
+        TkOpeningPar: begin
             token := token^.next;
             Expression(token, res, code);
             token := token^.next
@@ -73,7 +73,7 @@ begin
     while true do
     begin
         if (token = nil) or
-            (token^.kind <> TnOperation) or
+            (token^.kind <> TkOperation) or
             not (token^.op in ['*', '/', '%']) then
         begin
             exit
@@ -108,7 +108,7 @@ begin
     while true do
     begin
         if (token = nil) or
-            (token^.kind <> TnOperation) or
+            (token^.kind <> TkOperation) or
             not (token^.op in ['+', '-']) then
         begin
             exit

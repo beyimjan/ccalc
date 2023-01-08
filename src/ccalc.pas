@@ -21,7 +21,7 @@
 program ccalc;
 
 uses
-    clexer, ccalculate;
+    lexer, math;
 
 const
     SyntaxError = 'Syntax error at pos: ';
@@ -62,7 +62,7 @@ begin
                 writeln('Error: Division by zero!')
         end
     end;
-    LexerClear(calc.lexer);
+    LexerEmpty(calc.lexer);
     calc.start := true
 end;
 
@@ -92,7 +92,7 @@ begin
                 if calc.lexer.syntaxError then
                 begin
                     readln;
-                    LexerClear(calc.lexer);
+                    LexerEmpty(calc.lexer);
                     calc.start := true;
                     writeln(SyntaxError, calc.x)
                 end

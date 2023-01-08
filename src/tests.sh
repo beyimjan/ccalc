@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#   ccalc-tests.sh
+#   tests.sh
 #
 #   Copyright (C) 2022 Tamerlan Bimzhanov
 #
@@ -30,4 +30,4 @@ while read question && read answer; do
         echo EXPECTED: "'$answer'"
         echo GOT: "'$result'"
     fi
-done < ccalc-tests.txt
+done < tests.txt

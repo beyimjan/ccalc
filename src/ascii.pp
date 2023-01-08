@@ -1,4 +1,4 @@
-{   chutils.pp
+{   ascii.pp
 
     Copyright (C) 2022 Tamerlan Bimzhanov
 
@@ -18,7 +18,7 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 }
 
-unit chutils;
+unit ascii;
 
 interface
 
@@ -26,7 +26,7 @@ interface
 function IsDigit(c: char): boolean;
 
 { Returns true if character is #9, #10 or ' ', otherwise false }
-function IsWhitespace(c: char): boolean;
+function IsWhiteSpace(c: char): boolean;
 
 { Returns true if character is #9 or ' ', otherwise false }
 function IsTabOrSpace(c: char): boolean;
@@ -41,7 +41,7 @@ begin
     exit((c >= '0') and (c <= '9'))
 end;
 
-function IsWhitespace(c: char): boolean;
+function IsWhiteSpace(c: char): boolean;
 begin
     exit((c = #9) or (c = #10) or (c = ' '))
 end;

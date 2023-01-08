@@ -1,4 +1,4 @@
-{   clexer.pp
+{   lexer.pp
 
     Copyright (C) 2022 Tamerlan Bimzhanov
 
@@ -18,35 +18,36 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 }
 
-unit clexer;
+unit lexer;
 
 interface
 
 uses
-    brackets;
+    parentheses;
 
 type
-    TTokenPtr = ^TToken;
     TTokenKind = (
-        TnSign, TnInt, TnOperation,
-        TnOBracket, TnCBracket
+        TkSign, TkInt, TkOperation,
+        TkOpeningPar, TkClosingPar
     );
+
+    TTokenPtr = ^TToken;
     TToken = record
         prev, next: TTokenPtr;
         case kind : TTokenKind of
-            TnSign: (
+            TkSign: (
                 sign: char
             );
-            TnInt: (
+            TkInt: (
                 i: int64
             );
-            TnOperation: (
+            TkOperation: (
                 op: char
             )
     end;
 
     TLexer = record
-        brackets: TBrackets;
+        parentheses: TParentheses;
         first, last: TTokenPtr;
         syntaxError: boolean;
     end;
@@ -59,12 +60,31 @@ procedure LexerStep(var lexer: TLexer; c: char);
 procedure PrintTokens(var lexer: TLexer);
 {$ENDIF}
 
-procedure LexerClear(var lexer: TLexer);
+procedure LexerEmpty(var lexer: TLexer);
 
 implementation
 
 uses
-    chutils;
+    ascii;
+
+procedure LexerStart(var lexer: TLexer);
+begin
+    ParenthesesInitialize(lexer.parentheses);
+    lexer.first := nil;
+    lexer.last := nil;
+    lexer.syntaxError := false
+end;
+
+procedure LexerStop(var lexer: TLexer);
+begin
+    if ((lexer.last <> nil) and
+            (lexer.last^.kind in [TkSign, TkOperation])) or
+        not AreParenthesesBalanced(lexer.parentheses) then
+    begin
+        lexer.syntaxError := true
+    end
+end;
+
 
 procedure PushToken(var lexer: TLexer);
 begin
@@ -84,53 +104,35 @@ begin
     end
 end;
 
-procedure LexerStart(var lexer: TLexer);
-begin
-    BracketsCreate(lexer.brackets);
-    lexer.first := nil;
-    lexer.last := nil;
-    lexer.syntaxError := false
-end;
-
-procedure LexerStop(var lexer: TLexer);
-begin
-    if ((lexer.last <> nil) and
-            (lexer.last^.kind in [TnSign, TnOperation])) or
-        not BracketsBalanced(lexer.brackets) then
-    begin
-        lexer.syntaxError := true
-    end
-end;
-
 procedure LexerStep(var lexer: TLexer; c: char);
 var
     sign: char;
 begin
-    if ((lexer.last = nil) or (lexer.last^.kind = TnOBracket)) and
+    if ((lexer.last = nil) or (lexer.last^.kind = TkOpeningPar)) and
         IsPlusOrMinus(c) then
     begin
         PushToken(lexer);
-        lexer.last^.kind := TnSign;
+        lexer.last^.kind := TkSign;
         lexer.last^.sign := c
     end
     else if IsDigit(c) then
     begin
-        if (lexer.last <> nil) and (lexer.last^.kind = TnSign) then
+        if (lexer.last <> nil) and (lexer.last^.kind = TkSign) then
         begin
             if c = '0' then
                 exit;
             sign := lexer.last^.sign;
-            lexer.last^.kind := TnInt;
+            lexer.last^.kind := TkInt;
             lexer.last^.i := ord(c) - ord('0');
             if sign = '-' then
                 lexer.last^.i := -lexer.last^.i
         end
         else
         begin
-            if (lexer.last = nil) or (lexer.last^.kind <> TnInt) then
+            if (lexer.last = nil) or (lexer.last^.kind <> TkInt) then
             begin
                 PushToken(lexer);
-                lexer.last^.kind := TnInt;
+                lexer.last^.kind := TkInt;
                 lexer.last^.i := ord(c) - ord('0')
             end
             else
@@ -140,41 +142,41 @@ begin
     else if c in ['+', '-', '/', '%', '*'] then
     begin
         if (lexer.last = nil) or
-            (lexer.last^.kind in [TnSign, TnOBracket, TnOperation]) then
+            (lexer.last^.kind in [TkSign, TkOpeningPar, TkOperation]) then
         begin
             lexer.syntaxError := true;
             exit
         end;
         PushToken(lexer);
-        lexer.last^.kind := TnOperation;
+        lexer.last^.kind := TkOperation;
         lexer.last^.op := c
     end
     else if c = '(' then
     begin
         if (lexer.last <> nil) and
-            (lexer.last^.kind in [TnInt, TnCBracket]) then
+            (lexer.last^.kind in [TkInt, TkClosingPar]) then
         begin
             lexer.syntaxError := true;
             exit
         end;
         PushToken(lexer);
-        lexer.last^.kind := TnOBracket;
-        PushOBracket(lexer.brackets)
+        lexer.last^.kind := TkOpeningPar;
+        PushOpeningParenthesis(lexer.parentheses)
     end
     else if c = ')' then
     begin
-        if BracketsBalanced(lexer.brackets) or
+        if AreParenthesesBalanced(lexer.parentheses) or
             ((lexer.last <> nil) and
-                (lexer.last^.kind in [TnSign, TnOperation, TnOBracket])) then
+                (lexer.last^.kind in [TkSign, TkOperation, TkOpeningPar])) then
         begin
             lexer.syntaxError := true;
             exit
         end;
         PushToken(lexer);
-        lexer.last^.kind := TnCBracket;
-        PushCBracket(lexer.brackets)
+        lexer.last^.kind := TkClosingPar;
+        PushClosingParenthesis(lexer.parentheses)
     end
-    else if not IsWhitespace(c) then
+    else if not IsWhiteSpace(c) then
         lexer.syntaxError := true
 end;
 
@@ -187,15 +189,15 @@ begin
     while tmp <> nil do
     begin
         case tmp^.kind of
-            TnSign:
+            TkSign:
                 write(tmp^.sign);
-            TnInt:
+            TkInt:
                 write(tmp^.i);
-            TnOperation:
+            TkOperation:
                 write(tmp^.op);
-            TnOBracket:
+            TkOpeningPar:
                 write('(');
-            TnCBracket:
+            TkClosingPar:
                 write(')')
         end;
         if tmp^.next <> nil then
@@ -207,11 +209,11 @@ begin
 end;
 {$ENDIF}
 
-procedure LexerClear(var lexer: TLexer);
+procedure LexerEmpty(var lexer: TLexer);
 var
     tmp: TTokenPtr;
 begin
-    BracketsClear(lexer.brackets);
+    ParenthesesEmpty(lexer.parentheses);
     while lexer.first <> nil do
     begin
         tmp := lexer.first;
