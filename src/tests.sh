@@ -2,7 +2,7 @@
 #
 #   tests.sh
 #
-#   Copyright (C) 2022 Tamerlan Bimzhanov
+#   Copyright (C) 2022, 2023 Tamerlan Bimzhanov
 #
 #   This file is part of ccalc.
 #
@@ -23,11 +23,11 @@ prog=./ccalc
 
 [ -f $prog ] || { echo Couldn\'t find the program to test! >&2 ; exit 1 ; }
 
-while read question && read answer; do
+sed '/^#/d' tests.txt | while read question && read answer; do
     result=`echo "$question" | $prog`
     if [ "$result" != "$answer" ]; then
         echo TEST "'${question}'" FAILED!
         echo EXPECTED: "'$answer'"
         echo GOT: "'$result'"
     fi
-done < tests.txt
+done
