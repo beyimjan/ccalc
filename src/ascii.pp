@@ -1,6 +1,4 @@
-{   ascii.pp
-
-    Copyright (C) 2022, 2023 Tamerlan Bimzhanov
+{   Copyright (C) 2022, 2023 Tamerlan Bimzhanov
 
     This file is part of ccalc.
 

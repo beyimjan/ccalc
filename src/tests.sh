@@ -1,7 +1,5 @@
 #!/bin/sh
 #
-#   tests.sh
-#
 #   Copyright (C) 2022, 2023 Tamerlan Bimzhanov
 #
 #   This file is part of ccalc.
