@@ -27,5 +27,6 @@ sed '/^#/d' tests.txt | while read question && read answer; do
         echo TEST "'${question}'" FAILED!
         echo EXPECTED: "'$answer'"
         echo GOT: "'$result'"
+        echo "----------------------------------------"
     fi
 done

@@ -19,10 +19,14 @@
 program ccalc;
 
 uses
-    lexer, math;
+    lexer, math
+{$IFDEF DEBUG}
+    , debug
+{$ENDIF}
+    ;
 
 const
-    SyntaxError = 'Syntax error at pos: ';
+    SyntaxErrMsgPrefix = 'Syntax error at pos: ';
 
 type
     TCCalc = record
@@ -45,8 +49,8 @@ begin
     LexerStop(calc.lexer);
     if calc.lexer.first <> nil then
     begin
-        if calc.lexer.syntaxError then
-            writeln(SyntaxError, calc.x)
+        if calc.lexer.SyntaxError then
+            writeln(SyntaxErrMsgPrefix, calc.x)
         else
         begin
 {$IFDEF DEBUG}
@@ -87,12 +91,12 @@ begin
             begin
                 inc(calc.x);
                 LexerStep(calc.lexer, c);
-                if calc.lexer.syntaxError then
+                if calc.lexer.SyntaxError then
                 begin
                     readln;
                     LexerEmpty(calc.lexer);
                     calc.start := true;
-                    writeln(SyntaxError, calc.x)
+                    writeln(SyntaxErrMsgPrefix, calc.x)
                 end
             end
         end

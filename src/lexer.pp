@@ -47,18 +47,14 @@ type
     TLexer = record
         parentheses: TParentheses;
         first, last: TTokenPtr;
-        syntaxError: boolean;
+        SyntaxError: boolean;
     end;
 
 procedure LexerStart(var lexer: TLexer);
 procedure LexerStop(var lexer: TLexer);
+procedure LexerEmpty(var lexer: TLexer);
 procedure LexerStep(var lexer: TLexer; c: char);
 
-{$IFDEF DEBUG}
-procedure PrintTokens(var lexer: TLexer);
-{$ENDIF}
-
-procedure LexerEmpty(var lexer: TLexer);
 
 implementation
 
@@ -70,7 +66,7 @@ begin
     ParenthesesInitialize(lexer.parentheses);
     lexer.first := nil;
     lexer.last := nil;
-    lexer.syntaxError := false
+    lexer.SyntaxError := false
 end;
 
 procedure LexerStop(var lexer: TLexer);
@@ -79,10 +75,23 @@ begin
             (lexer.last^.kind in [TkSign, TkOperation])) or
         not AreParenthesesBalanced(lexer.parentheses) then
     begin
-        lexer.syntaxError := true
+        lexer.SyntaxError := true
     end
 end;
 
+procedure LexerEmpty(var lexer: TLexer);
+var
+    tmp: TTokenPtr;
+begin
+    ParenthesesEmpty(lexer.parentheses);
+    while lexer.first <> nil do
+    begin
+        tmp := lexer.first;
+        lexer.first := lexer.first^.next;
+        dispose(tmp)
+    end;
+    lexer.last := nil
+end;
 
 procedure PushToken(var lexer: TLexer);
 begin
@@ -142,7 +151,7 @@ begin
         if (lexer.last = nil) or
             (lexer.last^.kind in [TkSign, TkOpeningPar, TkOperation]) then
         begin
-            lexer.syntaxError := true;
+            lexer.SyntaxError := true;
             exit
         end;
         PushToken(lexer);
@@ -154,7 +163,7 @@ begin
         if (lexer.last <> nil) and
             (lexer.last^.kind in [TkInt, TkClosingPar]) then
         begin
-            lexer.syntaxError := true;
+            lexer.SyntaxError := true;
             exit
         end;
         PushToken(lexer);
@@ -167,7 +176,7 @@ begin
             ((lexer.last <> nil) and
                 (lexer.last^.kind in [TkSign, TkOperation, TkOpeningPar])) then
         begin
-            lexer.syntaxError := true;
+            lexer.SyntaxError := true;
             exit
         end;
         PushToken(lexer);
@@ -175,50 +184,7 @@ begin
         PushClosingParenthesis(lexer.parentheses)
     end
     else if not IsWhiteSpace(c) then
-        lexer.syntaxError := true
-end;
-
-{$IFDEF DEBUG}
-procedure PrintTokens(var lexer: TLexer);
-var
-    tmp: TTokenPtr;
-begin
-    tmp := lexer.first;
-    while tmp <> nil do
-    begin
-        case tmp^.kind of
-            TkSign:
-                write(tmp^.sign);
-            TkInt:
-                write(tmp^.i);
-            TkOperation:
-                write(tmp^.op);
-            TkOpeningPar:
-                write('(');
-            TkClosingPar:
-                write(')')
-        end;
-        if tmp^.next <> nil then
-            write(', ')
-        else
-            writeln;
-        tmp := tmp^.next
-    end
-end;
-{$ENDIF}
-
-procedure LexerEmpty(var lexer: TLexer);
-var
-    tmp: TTokenPtr;
-begin
-    ParenthesesEmpty(lexer.parentheses);
-    while lexer.first <> nil do
-    begin
-        tmp := lexer.first;
-        lexer.first := lexer.first^.next;
-        dispose(tmp)
-    end;
-    lexer.last := nil
+        lexer.SyntaxError := true
 end;
 
 end.
