@@ -37,7 +37,8 @@ type
                 sign: char
             );
             TkInt: (
-                i: int64
+                i: int64;
+                parsed: boolean
             );
             TkOperation: (
                 op: char
@@ -71,8 +72,11 @@ end;
 
 procedure LexerStop(var lexer: TLexer);
 begin
-    if ((lexer.last <> nil) and
-            (lexer.last^.kind in [TkSign, TkOperation])) or
+    if lexer.last = nil then
+        exit;
+    if (lexer.last^.kind = TkInt) then
+        lexer.last^.parsed := true;
+    if (lexer.last^.kind in [TkSign, TkOperation]) or
         not AreParenthesesBalanced(lexer.parentheses) then
     begin
         lexer.SyntaxError := true
@@ -104,6 +108,10 @@ begin
     end
     else
     begin
+        if lexer.last^.kind = TkInt then
+        begin
+            lexer.last^.parsed := true;
+        end;
         new(lexer.last^.next);
         lexer.last^.next^.prev := lexer.last;
         lexer.last := lexer.last^.next;
@@ -111,11 +119,50 @@ begin
     end
 end;
 
-procedure LexerStep(var lexer: TLexer; c: char);
+procedure LexerStepDigit(var lexer: TLexer; digit: byte);
 var
     sign: char;
 begin
-    if ((lexer.last = nil) or (lexer.last^.kind = TkOpeningPar)) and
+    if (lexer.last <> nil) and (lexer.last^.kind = TkSign) then
+    begin
+        sign := lexer.last^.sign;
+        lexer.last^.kind := TkInt;
+        lexer.last^.i := digit;
+        lexer.last^.parsed := false;
+        if sign = '-' then
+            lexer.last^.i := -lexer.last^.i
+    end
+    else
+    begin
+        if (lexer.last = nil) or (lexer.last^.kind <> TkInt) then
+        begin
+            PushToken(lexer);
+            lexer.last^.kind := TkInt;
+            lexer.last^.i := digit;
+            lexer.last^.parsed := false
+        end
+        else
+        begin
+            if lexer.last^.parsed then
+            begin
+                lexer.SyntaxError := true;
+                exit
+            end;
+            lexer.last^.i := lexer.last^.i * 10;
+            if lexer.last^.i < 0 then
+              dec(lexer.last^.i, digit)
+            else
+              inc(lexer.last^.i, digit)
+        end
+    end
+end;
+
+procedure LexerStep(var lexer: TLexer; c: char);
+begin
+    if ((lexer.last = nil) or
+          ((lexer.last^.kind = TkOpeningPar) or
+              ((lexer.last^.kind = TkOperation) and
+                  (lexer.last^.sign in ['/', '%', '*'])))) and
         IsPlusOrMinus(c) then
     begin
         PushToken(lexer);
@@ -123,29 +170,7 @@ begin
         lexer.last^.sign := c
     end
     else if IsDigit(c) then
-    begin
-        if (lexer.last <> nil) and (lexer.last^.kind = TkSign) then
-        begin
-            if c = '0' then
-                exit;
-            sign := lexer.last^.sign;
-            lexer.last^.kind := TkInt;
-            lexer.last^.i := ord(c) - ord('0');
-            if sign = '-' then
-                lexer.last^.i := -lexer.last^.i
-        end
-        else
-        begin
-            if (lexer.last = nil) or (lexer.last^.kind <> TkInt) then
-            begin
-                PushToken(lexer);
-                lexer.last^.kind := TkInt;
-                lexer.last^.i := ord(c) - ord('0')
-            end
-            else
-                lexer.last^.i := lexer.last^.i * 10 + ord(c) - ord('0')
-        end
-    end
+        LexerStepDigit(lexer, ord(c) - ord('0'))
     else if c in ['+', '-', '/', '%', '*'] then
     begin
         if (lexer.last = nil) or
@@ -183,7 +208,12 @@ begin
         lexer.last^.kind := TkClosingPar;
         PushClosingParenthesis(lexer.parentheses)
     end
-    else if not IsWhiteSpace(c) then
+    else if IsWhiteSpace(c) then
+    begin
+        if (lexer.last <> nil) and (lexer.last^.kind = TkInt) then
+            lexer.last^.parsed := true
+    end
+    else
         lexer.SyntaxError := true
 end;
 
