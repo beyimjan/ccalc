@@ -1,5 +1,5 @@
 # CCalc
-CCalc is a calculator with a simple console interface, written in Free Pascal. The program starts in text mode, allowing you to use it in the terminal.
+CCalc is a calculator with a simple console interface, written in Free Pascal.
 
 It can only perform calculations with integers.
 
@@ -19,7 +19,7 @@ Syntax error at pos: 3
 ```
 
 ## Compilation dependencies
-To compile the program, you will need the fpc compiler and make.
+To compile the program, you will need the `fpc` compiler and `make`.
 
 ## How to Use
 ```sh
