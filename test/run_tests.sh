@@ -24,7 +24,7 @@ prog=./ccalc
 sed '/^#/d' tests.txt | while read question && read answer; do
     result=`echo "$question" | $prog`
     if [ "$result" != "$answer" ]; then
-        echo TEST "'${question}'" FAILED!
+        echo TEST "'$question'" FAILED!
         echo EXPECTED: "'$answer'"
         echo GOT: "'$result'"
         echo "----------------------------------------"
