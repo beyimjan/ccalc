@@ -1,27 +1,30 @@
 # CCalc
 CCalc is a calculator with a simple console interface, written in Free Pascal.
 
-It can only perform calculations with integers.
-
-## Illustrating the Functionality
+## Features
 ```
 $ ./ccalc
-1 + 2
+1+2
 = 3
-4 +
-Syntax error at pos: 3
-4 + 4 * 4
+4+
+Syntax error at pos: 2
+4+4*4
 = 20
-4 + (4 + 4) * 4 + 4
+4+(4+4)*4+4
 = 40
-4 - 16 % 5
+4-16%5
 = 3
+-5*4
+= -20
 ```
 
-## Compilation dependencies
-To compile the program, you will need the `fpc` compiler and `make`.
+## Limitations
+It can only perform calculations with integers.
 
-## How to Use
+## Installation
+Binary downloads of the calculator can be found on [the Releases page](https://github.com/bimzhanovt/ccalc/releases).
+
+To compile the program from source, you will need to install the `fpc` compiler and `make`. Then, give the following commands:
 ```sh
 $ cd src/
 $ make
